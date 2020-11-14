@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class LocalFileWriter {
+public class LocalCSVFileWriter {
     public void writeToFile(String filename, List<String[]> data, String[] headers) throws IOException {
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy_MM_dd HH_mm_ss");
-        File file = new File(filename + dtf.format(LocalDateTime.now()) + ".csv");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd HH_mm_ss");
+        File file = new File(filename + formatter.format(LocalDateTime.now()) + ".csv");
 
         data.add(0, headers);
 

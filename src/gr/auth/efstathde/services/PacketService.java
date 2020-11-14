@@ -1,5 +1,5 @@
 package gr.auth.efstathde.services;
-import gr.auth.efstathde.helpers.LocalFileWriter;
+import gr.auth.efstathde.helpers.LocalCSVFileWriter;
 import gr.auth.efstathde.helpers.SystemConfiguration;
 
 import java.io.IOException;
@@ -72,7 +72,7 @@ public class PacketService {
 
     private void storeData() {
         LOGGER.log(Level.INFO, "Writing packets to files.");
-        var localFileWriter = new LocalFileWriter();
+        var localFileWriter = new LocalCSVFileWriter();
         try {
             localFileWriter.writeToFile("data/messages", messages, new String[] {"message", "duration"});
         } catch (IOException ex) {
@@ -83,7 +83,7 @@ public class PacketService {
 
     private void storeDataForTemperature() {
         LOGGER.log(Level.INFO, "Writing packets with temperature to files.");
-        var localFileWriter = new LocalFileWriter();
+        var localFileWriter = new LocalCSVFileWriter();
         try {
             localFileWriter.writeToFile("data/messages_with_temp", messages, new String[] {"Message", "Duration"});
         } catch (IOException ex) {
