@@ -1,20 +1,30 @@
 package gr.auth.efstathde.helpers;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.PrintWriter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static java.nio.file.StandardOpenOption.*;
+import java.util.stream.Stream;
 
 public class LocalFileWriter {
-    public static void writeToFile(String filename, List<String> data) throws IOException {
-        Files.write(Paths.get(filename), data, CREATE, WRITE, TRUNCATE_EXISTING);
+    public void writeToFile(String filename, List<String[]> data, String[] headers) throws IOException {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy_MM_dd HH_mm_ss");
+        File file = new File(filename + dtf.format(LocalDateTime.now()) + ".csv");
+
+        data.add(0, headers);
+
+        try (PrintWriter pw = new PrintWriter(file)) {
+            data.stream()
+                    .map(this::convertToCSV)
+                    .forEach(pw::println);
+        }
     }
 
-    public static void writeLongsToFile(String filename, List<Long> data) throws IOException {
-        var stringifiedData = data.stream().map(String::valueOf).collect(Collectors.toList());
-        Files.write(Paths.get(filename), stringifiedData, CREATE, WRITE, TRUNCATE_EXISTING);
+    public String convertToCSV(String[] data) {
+        return Stream.of(data)
+                .collect(Collectors.joining(" , "));
     }
 }

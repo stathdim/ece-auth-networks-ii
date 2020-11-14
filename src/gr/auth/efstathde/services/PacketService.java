@@ -11,25 +11,37 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class PackageService {
-    private static final Logger LOGGER = Logger.getLogger(PackageService.class.getSimpleName());
-    private static final int EXCHANGE_DURATION_MS = 15000;
-    private static final String ECHO_REQUEST_CODE = "E8211";
-    private final List<String> messages;
-    private final List<Long> pingDurations;
+public class PacketService {
+    private static final Logger LOGGER = Logger.getLogger(PacketService.class.getSimpleName());
+    private static final int EXCHANGE_DURATION_MS = 240000;
+    private static final String ECHO_REQUEST_CODE = "E1528";
+    private final List<String[]> messages;
 
-    public PackageService() {
+    public PacketService() {
         this.messages = new ArrayList<>();
-        this.pingDurations = new ArrayList<>();
     }
 
-    public void performPing() throws Exception
+    public void getPacketsWithTemperature() throws Exception
+    {
+        getFromServer(ECHO_REQUEST_CODE + "T00");
+        storeDataForTemperature();
+        messages.clear();
+    }
+
+    public void getPacketsWithoutTemperature() throws Exception
+    {
+        getFromServer(ECHO_REQUEST_CODE);
+        storeData();
+        messages.clear();
+    }
+
+    private void getFromServer(String echoRequestCode) throws Exception
     {
         var clientPort = SystemConfiguration.getClientPort();
         var serverIp = SystemConfiguration.getServerIp();
         var serverPort = SystemConfiguration.getServerPort();
 
-        var txbuffer = ECHO_REQUEST_CODE.getBytes();
+        var txbuffer = echoRequestCode.getBytes();
         var hostAddress = InetAddress.getByName(serverIp);
         var requestSocket = new DatagramSocket();
         var responseSocket = new DatagramSocket(clientPort);
@@ -48,25 +60,36 @@ public class PackageService {
                 var transmissionCompleted = System.currentTimeMillis();
                 var receivedMessage = new String(rxbuffer, 0, responsePacket.getLength());
                 var duration = transmissionCompleted - transmissionStart;
-                pingDurations.add(duration) ;
-                messages.add(receivedMessage);
+                messages.add(new String[] {receivedMessage, String.valueOf(duration)});
                 LOGGER.log(Level.INFO, "Received packet after " + String.format("%.2f", duration / 1000.0) + " second");
             } catch (Exception x) {
                 LOGGER.log(Level.SEVERE ,x.getMessage());
             }
         }
-        storeData();
+        responseSocket.close();
+        requestSocket.close();
     }
 
     private void storeData() {
-        LOGGER.log(Level.INFO, "Writing ping data to files.");
+        LOGGER.log(Level.INFO, "Writing packets to files.");
+        var localFileWriter = new LocalFileWriter();
         try {
-            LocalFileWriter.writeToFile("data/messages.txt", messages);
-            LocalFileWriter.writeLongsToFile("data/durations.txt", pingDurations);
+            localFileWriter.writeToFile("data/messages", messages, new String[] {"message", "duration"});
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.toString(), ex);
         }
-        LOGGER.log(Level.INFO, "Finished writing ping data to files.");
+        LOGGER.log(Level.INFO, "Finished writing packets to files.");
+    }
+
+    private void storeDataForTemperature() {
+        LOGGER.log(Level.INFO, "Writing packets with temperature to files.");
+        var localFileWriter = new LocalFileWriter();
+        try {
+            localFileWriter.writeToFile("data/messages_with_temp", messages, new String[] {"Message", "Duration"});
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, ex.toString(), ex);
+        }
+        LOGGER.log(Level.INFO, "Finished writing packets with temperature to files.");
     }
 
 
