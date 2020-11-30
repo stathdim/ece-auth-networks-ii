@@ -23,8 +23,20 @@ public class LocalCSVFileWriter {
         }
     }
 
+    public void writeStringsToFile(String filename, List<String> data, String[] headers) throws IOException {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd HH_mm_ss");
+        File file = new File(filename + formatter.format(LocalDateTime.now()) + ".csv");
+
+        data.add(0, headers.toString());
+
+        try (PrintWriter pw = new PrintWriter(file)) {
+            data.stream()
+                    .forEach(pw::println);
+        }
+    }
+
     public String convertToCSV(String[] data) {
         return Stream.of(data)
-                .collect(Collectors.joining(" , "));
+                .collect(Collectors.joining(","));
     }
 }

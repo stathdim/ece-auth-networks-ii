@@ -13,8 +13,8 @@ import java.util.logging.Logger;
 
 public class PacketService {
     private static final Logger LOGGER = Logger.getLogger(PacketService.class.getSimpleName());
-    private static final int EXCHANGE_DURATION_MS = 240000;
-    private static final String ECHO_REQUEST_CODE = "E1528";
+    private static final int EXCHANGE_DURATION_MS = 24000;
+    private static final String ECHO_REQUEST_CODE = "E3595";
     private final List<String[]> messages;
 
     public PacketService() {
@@ -85,7 +85,7 @@ public class PacketService {
         LOGGER.log(Level.INFO, "Writing packets with temperature to files.");
         var localFileWriter = new LocalCSVFileWriter();
         try {
-            localFileWriter.writeToFile("data/messages_with_temp", messages, new String[] {"Message", "Duration"});
+            localFileWriter.writeToFile("data/messages_with_temp_" + ECHO_REQUEST_CODE + "_", messages, new String[] {"Message", "Duration"});
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.toString(), ex);
         }

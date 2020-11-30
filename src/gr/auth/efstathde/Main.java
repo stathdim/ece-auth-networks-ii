@@ -1,7 +1,6 @@
 package gr.auth.efstathde;
 
-import gr.auth.efstathde.services.ImageService;
-import gr.auth.efstathde.services.PacketService;
+import gr.auth.efstathde.services.*;
 
 public class Main {
 
@@ -11,11 +10,19 @@ public class Main {
 //            var service = new PacketService();
 //            service.getPacketsWithTemperature();
 //            service.getPacketsWithoutTemperature();
-            var imageService = new ImageService();
-            imageService.getImage();
+//            var imageService = new ImageService();
+//            imageService.getImage();
+//            var copterService = new IthakiCopterService();
+//            copterService.communicateWithCopter();
+//            var soundService = new NonAdaptiveSoundService();
+//            soundService.soundDPCM();
+            var adaptiveSoundService = new AdaptiveSoundService();
+            adaptiveSoundService.test();
+//            var diagnosticsService = new DiagnosticsService();
+//            diagnosticsService.GetDeviceDiagnostics();
         } catch (Exception ex)
         {
-            System.out.println("Error");
+            System.out.println(ex.getMessage());
         }
     }
 }
