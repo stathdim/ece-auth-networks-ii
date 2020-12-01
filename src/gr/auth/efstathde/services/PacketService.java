@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 public class PacketService {
     private static final Logger LOGGER = Logger.getLogger(PacketService.class.getSimpleName());
     private static final int EXCHANGE_DURATION_MS = 24000;
-    private static final String ECHO_REQUEST_CODE = "E3595";
+    private static final String ECHO_REQUEST_CODE = "E2645";
     private final List<String[]> messages;
 
     public PacketService() {
@@ -23,7 +23,7 @@ public class PacketService {
 
     public void getPacketsWithTemperature() throws Exception
     {
-        getFromServer(ECHO_REQUEST_CODE + "T00");
+        getFromServer(ECHO_REQUEST_CODE + "T00"); // Only station still operational
         storeDataForTemperature();
         messages.clear();
     }
@@ -31,9 +31,17 @@ public class PacketService {
     public void getPacketsWithoutTemperature() throws Exception
     {
         getFromServer(ECHO_REQUEST_CODE);
-        storeData();
+        storeData("packets_without_temp");
         messages.clear();
     }
+
+    public void getPacketsWithDisabledRandomness() throws Exception
+    {
+        getFromServer("E0000");
+        storeData("packets_without_random");
+        messages.clear();
+    }
+
 
     private void getFromServer(String echoRequestCode) throws Exception
     {
@@ -62,19 +70,19 @@ public class PacketService {
                 var duration = transmissionCompleted - transmissionStart;
                 messages.add(new String[] {receivedMessage, String.valueOf(duration)});
                 LOGGER.log(Level.INFO, "Received packet after " + String.format("%.2f", duration / 1000.0) + " second");
-            } catch (Exception x) {
-                LOGGER.log(Level.SEVERE ,x.getMessage());
+            } catch (Exception ex) {
+                LOGGER.log(Level.SEVERE ,ex.getMessage());
             }
         }
         responseSocket.close();
         requestSocket.close();
     }
 
-    private void storeData() {
+    private void storeData(String name) {
         LOGGER.log(Level.INFO, "Writing packets to files.");
         var localFileWriter = new LocalCSVFileWriter();
         try {
-            localFileWriter.writeToFile("data/messages", messages, new String[] {"message", "duration"});
+            localFileWriter.writeToFile("data/" + name, messages, new String[] {"message", "duration"});
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.toString(), ex);
         }

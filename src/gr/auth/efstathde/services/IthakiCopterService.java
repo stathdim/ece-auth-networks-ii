@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 public class IthakiCopterService {
     private static final Logger LOGGER = Logger.getLogger(IthakiCopterService.class.getSimpleName());
-    private static final String COPTER_CODE = "Q0440";
+    private static final String COPTER_CODE = "Q2819";
     private static final int COPTER_PORT = 48075;
     private final List<String> receivedMessages;
 

@@ -12,14 +12,14 @@ public class Main {
 //            service.getPacketsWithoutTemperature();
 //            var imageService = new ImageService();
 //            imageService.getImage();
-//            var copterService = new IthakiCopterService();
-//            copterService.communicateWithCopter();
-//            var soundService = new NonAdaptiveSoundService();
-//            soundService.soundDPCM();
+            var copterService = new IthakiCopterService();
+            copterService.communicateWithCopter();
+            var soundService = new NonAdaptiveSoundService();
+            soundService.getSignals();
             var adaptiveSoundService = new AdaptiveSoundService();
-            adaptiveSoundService.test();
-//            var diagnosticsService = new DiagnosticsService();
-//            diagnosticsService.GetDeviceDiagnostics();
+            adaptiveSoundService.getSoundFile();
+            var diagnosticsService = new DiagnosticsService();
+            diagnosticsService.GetDeviceDiagnostics();
         } catch (Exception ex)
         {
             System.out.println(ex.getMessage());

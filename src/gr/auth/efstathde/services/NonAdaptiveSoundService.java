@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 
 public class NonAdaptiveSoundService {
     private static final Logger LOGGER = Logger.getLogger(NonAdaptiveSoundService.class.getSimpleName());
-    private static final String CODE = "A2524F";
+    private static final String CODE = "A2505";
     private static List<String[]> signalFrequencies;
     private static List<String[]> signalSubs;
 
@@ -27,12 +27,17 @@ public class NonAdaptiveSoundService {
         signalSubs = new ArrayList<>();
     }
 
-    public void getSignal() throws IOException, LineUnavailableException {
+    public void getSignals() throws IOException, LineUnavailableException {
+        getSignal(CODE + "F");
+        getSignal(CODE + "T");
+    }
+
+    private void getSignal(String requestCode) throws IOException, LineUnavailableException {
         var ipAddress = SystemConfiguration.getServerIp();
         var serverPort = SystemConfiguration.getServerPort();
         var clientPort = SystemConfiguration.getClientPort();
         int packetCount = 997, b = 2;
-        String packetInfo = CODE + packetCount;
+        String packetInfo = requestCode + packetCount;
 
         byte[] txbuffer = packetInfo.getBytes();
         DatagramPacket reqPacket =
@@ -69,7 +74,7 @@ public class NonAdaptiveSoundService {
                 LOGGER.log(Level.SEVERE, ex.toString(), ex);
             }
         }
-        storeData();
+        storeData(requestCode);
         playSoundClip(packetCount, freqs);
 
         resSocket.close();
@@ -86,12 +91,12 @@ public class NonAdaptiveSoundService {
         dl.stop();
         dl.close();
     }
-    private void storeData() {
+    private void storeData(String requestCode) {
         LOGGER.log(Level.INFO, "Writing packets to files.");
         var localFileWriter = new LocalCSVFileWriter();
         try {
-            localFileWriter.writeToFile("data/DPCM_samples_" + CODE + "_", signalFrequencies, new String[] {"sample", "value"});
-            localFileWriter.writeToFile("data/DPCM_subs_" + CODE + "_", signalSubs, new String[] {"sub", "value"});
+            localFileWriter.writeToFile("data/DPCM_samples_" + requestCode + "_", signalFrequencies, new String[] {"sample", "value"});
+            localFileWriter.writeToFile("data/DPCM_subs_" + requestCode + "_", signalSubs, new String[] {"sub", "value"});
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.toString(), ex);
         }
