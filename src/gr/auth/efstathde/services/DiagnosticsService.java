@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  */
 public class DiagnosticsService {
     private static final Logger LOGGER = Logger.getLogger(DiagnosticsService.class.getSimpleName());
-    private static final String CODE = "V7517";
+    private static final String CODE = "V2219";
     private static final int DURATION_MS = 240000; // 4 min in milliseconds
     private static final String[] typesOfMeasurements = new String[]{
             "Run Time",

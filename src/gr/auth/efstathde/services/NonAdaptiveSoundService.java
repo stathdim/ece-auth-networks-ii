@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 
 public class NonAdaptiveSoundService {
     private static final Logger LOGGER = Logger.getLogger(NonAdaptiveSoundService.class.getSimpleName());
-    private static final String CODE = "A2505";
+    private static final String CODE = "A9915";
     private static List<String[]> signalFrequencies;
     private static List<String[]> signalSubs;
 

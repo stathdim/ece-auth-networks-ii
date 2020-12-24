@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 
 public class AdaptiveSoundService {
     private static final Logger LOGGER = Logger.getLogger(AdaptiveSoundService.class.getSimpleName());
-    private static final String CODE = "A2505AQF";
+    private static final String CODE = "A9915AQF";
     private static List<String[]> signalSubs;
     private static List<String[]> signalSamples;
     private static List<String[]> signalMeans;

@@ -1,10 +1,13 @@
 package gr.auth.efstathde.services;
 
 import gr.auth.efstathde.helpers.LocalCSVFileWriter;
+import gr.auth.efstathde.helpers.SystemConfiguration;
 
 import java.io.*;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -12,34 +15,56 @@ import java.util.logging.Logger;
 
 public class IthakiCopterService {
     private static final Logger LOGGER = Logger.getLogger(IthakiCopterService.class.getSimpleName());
-    private static final String COPTER_CODE = "Q2819";
-    private static final int COPTER_PORT = 48075;
+    private static final String COPTER_CODE = "Q0596";
+    private static final int COPTER_PORT = 38048;
     private final List<String> receivedMessages;
 
     public IthakiCopterService() {
         receivedMessages = new ArrayList<>();
     }
 
-    public void communicateWithCopter() throws IOException {
-        var rxBuffer = new byte[5000];
-        DatagramPacket resPacket = new DatagramPacket(rxBuffer, rxBuffer.length);
-        DatagramSocket resSocket = new DatagramSocket(COPTER_PORT);
-        DatagramSocket reqSocket = new DatagramSocket();
+    public void communicateWithCopter() throws IOException
+    {
+        communicate(150, 150, 150, "data/CopterTelemetry_0"+ COPTER_CODE + ".csv");
+        communicate(240, 170, 170,"data/CopterTelemetry_1"+ COPTER_CODE + ".csv");
+    }
 
-        for (int i = 0; i < 60; i++){
-            try {
-                resSocket.receive(resPacket);
-                String message = new String(rxBuffer, 0, resPacket.getLength());
-                receivedMessages.add(message);
-                LOGGER.log(Level.INFO, new String(rxBuffer));
-            } catch (Exception ex) {
-                LOGGER.log(Level.SEVERE, ex.toString(), ex);
+    private void communicate(int level, int left, int right, String name) throws IOException {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        System.out.println(dtf.format(LocalDateTime.now()));
+        File CopterTelemetry = new File(name);
+        FileOutputStream copter_stream = new FileOutputStream(CopterTelemetry);
+
+        InetAddress hostAddress = InetAddress.getByName(SystemConfiguration.getServerIp());
+        Socket OutputSocket = new Socket(hostAddress, COPTER_PORT);
+        BufferedReader Input = new BufferedReader(new InputStreamReader(OutputSocket.getInputStream()));
+        DataOutputStream Output = new DataOutputStream(OutputSocket.getOutputStream());
+
+        String telemetry, TelemetryOutput = "";
+        String LLL, RRR, AAA, TTTT, PPPP;
+        try {
+            for(int times = 0; times < 300; times++) {
+                telemetry = Input.readLine();
+                Output.writeBytes("AUTO FLIGHTLEVEL=" + level + " LMOTOR=" + left + " RMOTOR=" + right + " PILOT \r\n");
+                if (telemetry.contains("ITHAKICOPTER")) {
+                    LLL = telemetry.substring(20, 23);
+                    RRR = telemetry.substring(31, 34);
+                    AAA = telemetry.substring(44, 47);
+                    TTTT = telemetry.substring(60, 66);
+                    PPPP = telemetry.substring(76, 83);
+                    System.out.println(LLL + " " + RRR + " " + AAA + " " + TTTT + " " + PPPP);
+                    TelemetryOutput += LLL + "," + RRR + "," + AAA + "," + TTTT + "," + PPPP + "\r\n";
+                }
             }
+        }catch (Exception e){
+            System.out.println(e);
         }
-
-        resSocket.close();
-        reqSocket.close();
-        storeData();
+        try {
+            copter_stream.write(TelemetryOutput.getBytes());
+            copter_stream.close();
+        } catch (IOException x) {
+            System.out.println("(Copter) Failure saving the results.");
+        }
     }
 
     private void storeData() {
@@ -47,7 +72,7 @@ public class IthakiCopterService {
         var localFileWriter = new LocalCSVFileWriter();
         try {
             localFileWriter.writeStringsToFile("data/copter_" + COPTER_CODE + "_", receivedMessages,
-                    new String[] {"left_motor", "right_motor", "altitude", "temperature", "pressure"});
+                    new String[]{"left_motor", "right_motor", "altitude", "temperature", "pressure"});
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.toString(), ex);
         }

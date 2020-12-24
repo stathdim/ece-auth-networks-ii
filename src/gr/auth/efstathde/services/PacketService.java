@@ -13,8 +13,8 @@ import java.util.logging.Logger;
 
 public class PacketService {
     private static final Logger LOGGER = Logger.getLogger(PacketService.class.getSimpleName());
-    private static final int EXCHANGE_DURATION_MS = 24000;
-    private static final String ECHO_REQUEST_CODE = "E2645";
+    private static final int EXCHANGE_DURATION_MS = 240000; // 4 min in ms
+    private static final String ECHO_REQUEST_CODE = "E3211";
     private final List<String[]> messages;
 
     public PacketService() {
