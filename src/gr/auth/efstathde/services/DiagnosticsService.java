@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  */
 public class DiagnosticsService {
     private static final Logger LOGGER = Logger.getLogger(DiagnosticsService.class.getSimpleName());
-    private static final String CODE = "V2219";
+    private String requestCode;
     private static final int DURATION_MS = 240000; // 4 min in milliseconds
     private static final String[] typesOfMeasurements = new String[]{
             "Run Time",
@@ -60,6 +60,7 @@ public class DiagnosticsService {
 
     public DiagnosticsService() {
         receivedDiagnostics = new ArrayList<>();
+        requestCode = SystemConfiguration.getDiagnosticsCode();
     }
 
     private static float diagnosticsResponseFormula(String rx, int typeOfOperation) {
@@ -84,6 +85,7 @@ public class DiagnosticsService {
     }
 
     public void GetDeviceDiagnostics() throws IOException {
+        LOGGER.log(Level.INFO, "Getting Vehicle Diagnostics, code: " + requestCode);
         var ipAddress = SystemConfiguration.getServerIp();
         var serverPort = SystemConfiguration.getServerPort();
         var clientPort = SystemConfiguration.getClientPort();
@@ -121,7 +123,7 @@ public class DiagnosticsService {
     }
 
     private String[] getRequestData() {
-        var codeWithModifier = CODE + "OBD=01 ";
+        var codeWithModifier = requestCode + "OBD=01 ";
 
         String[] requestData = {
                 codeWithModifier + PID_CODES.ENGINE_RUN_TIME.toString(),
@@ -138,7 +140,7 @@ public class DiagnosticsService {
         LOGGER.log(Level.INFO, "Writing packets to files.");
         var localFileWriter = new LocalCSVFileWriter();
         try {
-            localFileWriter.writeToFile("data/diagnostics_" + CODE + "_", receivedDiagnostics, typesOfMeasurements);
+            localFileWriter.writeToFile("data/diagnostics_" + requestCode + "_", receivedDiagnostics, typesOfMeasurements);
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.toString(), ex);
         }

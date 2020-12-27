@@ -15,18 +15,20 @@ import java.util.logging.Logger;
 
 public class IthakiCopterService {
     private static final Logger LOGGER = Logger.getLogger(IthakiCopterService.class.getSimpleName());
-    private static final String COPTER_CODE = "Q0596";
+    private String requestCode;
     private static final int COPTER_PORT = 38048;
     private final List<String> receivedMessages;
 
     public IthakiCopterService() {
         receivedMessages = new ArrayList<>();
+        requestCode = SystemConfiguration.getCopterCode();
     }
 
     public void communicateWithCopter() throws IOException
     {
-        communicate(150, 150, 150, "data/CopterTelemetry_0"+ COPTER_CODE + ".csv");
-        communicate(240, 170, 170,"data/CopterTelemetry_1"+ COPTER_CODE + ".csv");
+        LOGGER.log(Level.INFO, "Communicating with copter, code: " + requestCode);
+        communicate(150, 150, 150, "data/CopterTelemetry_0"+ requestCode + ".csv");
+        communicate(240, 170, 170,"data/CopterTelemetry_1"+ requestCode + ".csv");
     }
 
     private void communicate(int level, int left, int right, String name) throws IOException {
@@ -52,7 +54,6 @@ public class IthakiCopterService {
                     AAA = telemetry.substring(44, 47);
                     TTTT = telemetry.substring(60, 66);
                     PPPP = telemetry.substring(76, 83);
-                    System.out.println(LLL + " " + RRR + " " + AAA + " " + TTTT + " " + PPPP);
                     TelemetryOutput += LLL + "," + RRR + "," + AAA + "," + TTTT + "," + PPPP + "\r\n";
                 }
             }
@@ -71,7 +72,7 @@ public class IthakiCopterService {
         LOGGER.log(Level.INFO, "Writing packets to files.");
         var localFileWriter = new LocalCSVFileWriter();
         try {
-            localFileWriter.writeStringsToFile("data/copter_" + COPTER_CODE + "_", receivedMessages,
+            localFileWriter.writeStringsToFile("data/copter_" + requestCode + "_", receivedMessages,
                     new String[]{"left_motor", "right_motor", "altitude", "temperature", "pressure"});
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.toString(), ex);

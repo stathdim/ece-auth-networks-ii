@@ -17,18 +17,19 @@ import java.util.logging.Logger;
 
 public class ImageService {
     private static final Logger LOGGER = Logger.getLogger(ImageService.class.getSimpleName());
-    private static String CODE = "M4603CAM=";
+    private String requestCode;
     private final List<byte[]> receivedBytes;
 
     public ImageService() {
         receivedBytes = new ArrayList<>();
+        requestCode = SystemConfiguration.getImageCode() + "CAM=";
     }
 
     public void getImage() throws Exception {
-        getImageFromServer(CODE + "PTZ");
-        writeToFile(CODE + "PTZ");
-        getImageFromServer(CODE + "FIX");
-        writeToFile(CODE + "FIX");
+        getImageFromServer(requestCode + "PTZ");
+        writeToFile(requestCode + "PTZ");
+        getImageFromServer(requestCode + "FIX");
+        writeToFile(requestCode + "FIX");
     }
 
     private void getImageFromServer(String requestCode) throws Exception {

@@ -1,12 +1,9 @@
 package gr.auth.efstathde.services;
 
+import gr.auth.efstathde.helpers.AudioFileWriter;
 import gr.auth.efstathde.helpers.LocalCSVFileWriter;
 import gr.auth.efstathde.helpers.SystemConfiguration;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -20,25 +17,29 @@ import java.util.logging.Logger;
 
 public class AdaptiveSoundService {
     private static final Logger LOGGER = Logger.getLogger(AdaptiveSoundService.class.getSimpleName());
-    private static final String CODE = "A9915AQF";
-    private static List<String[]> signalSubs;
-    private static List<String[]> signalSamples;
-    private static List<String[]> signalMeans;
-    private static List<String[]> signalBetas;
+    private String requestCode;
+    private List<String[]> signalSubs;
+    private List<String[]> signalSamples;
+    private List<String[]> signalMeans;
+    private List<String[]> signalBetas;
 
     public AdaptiveSoundService() {
         signalSamples = new ArrayList<>();
         signalSubs = new ArrayList<>();
         signalMeans = new ArrayList<>();
         signalBetas = new ArrayList<>();
+
+        requestCode = SystemConfiguration.getAudioCode() + "AQF";
     }
 
-    public void getSoundFile() throws IOException, LineUnavailableException {
+    public void getSoundFile() throws IOException {
+        LOGGER.log(Level.INFO, "Getting song from Adaptive Sound service with request Code " + requestCode);
+
         int packetCount = 997;
         var ipAddress = SystemConfiguration.getServerIp();
         var serverPort = SystemConfiguration.getServerPort();
         var clientPort = SystemConfiguration.getClientPort();
-        String packetInfo = CODE + packetCount;
+        String packetInfo = requestCode + packetCount;
 
         // Packet spec
         byte[] txbuffer = packetInfo.getBytes();
@@ -93,17 +94,11 @@ public class AdaptiveSoundService {
         reqSocket.close();
 
         storeData();
-        playAudio(packetCount, freqs);
+        storeSoundClip(freqs, requestCode);
     }
 
-    private void playAudio(int packetCount, byte[] freqs) throws LineUnavailableException {
-        AudioFormat FAudio = new AudioFormat(8000, 16, 1, true, false);
-        SourceDataLine dl = AudioSystem.getSourceDataLine(FAudio);
-        dl.open(FAudio, 32000);
-        dl.start();
-        dl.write(freqs, 0, 256 * 2 * packetCount);
-        dl.stop();
-        dl.close();
+    private static void storeSoundClip(byte[] freqs, String requestCode) throws IOException {
+        AudioFileWriter.storeSoundClip(freqs, requestCode, "adaptive_song");
     }
 
     private int handleSignalBeta(byte[] rxbuffer, byte[] betta, byte sign, int i) {
@@ -132,13 +127,13 @@ public class AdaptiveSoundService {
         LOGGER.log(Level.INFO, "Writing signal data to files.");
         var localFileWriter = new LocalCSVFileWriter();
         try {
-            localFileWriter.writeToFile("data/AQDPCM_subs" + CODE + "_", signalSubs
+            localFileWriter.writeToFile("data/AQDPCM_subs" + requestCode + "_", signalSubs
                     , new String[]{"sub", "value"});
-            localFileWriter.writeToFile("data/AQDPCM_frequencies_" + CODE + "_", signalSamples,
+            localFileWriter.writeToFile("data/AQDPCM_frequencies_" + requestCode + "_", signalSamples,
                     new String[]{"sample", "value"});
-            localFileWriter.writeToFile("data/AQDPCM_betas_" + CODE + "_", signalBetas,
+            localFileWriter.writeToFile("data/AQDPCM_betas_" + requestCode + "_", signalBetas,
                     new String[]{"beta", "value"});
-            localFileWriter.writeToFile("data/AQDPCM_means_" + CODE + "_", signalMeans,
+            localFileWriter.writeToFile("data/AQDPCM_means_" + requestCode + "_", signalMeans,
                     new String[]{"mean", "value"});
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.toString(), ex);

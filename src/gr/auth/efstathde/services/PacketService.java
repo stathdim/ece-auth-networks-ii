@@ -14,29 +14,33 @@ import java.util.logging.Logger;
 public class PacketService {
     private static final Logger LOGGER = Logger.getLogger(PacketService.class.getSimpleName());
     private static final int EXCHANGE_DURATION_MS = 240000; // 4 min in ms
-    private static final String ECHO_REQUEST_CODE = "E3211";
+    private final String requestCode;
     private final List<String[]> messages;
 
     public PacketService() {
         this.messages = new ArrayList<>();
+        requestCode = SystemConfiguration.getPacketCode();
     }
 
     public void getPacketsWithTemperature() throws Exception
     {
-        getFromServer(ECHO_REQUEST_CODE + "T00"); // Only station still operational
+        LOGGER.log(Level.INFO, "Echoing with temperature, code: " + requestCode + "T00");
+        getFromServer(requestCode + "T00"); // Only station still operational
         storeDataForTemperature();
         messages.clear();
     }
 
     public void getPacketsWithoutTemperature() throws Exception
     {
-        getFromServer(ECHO_REQUEST_CODE);
+        LOGGER.log(Level.INFO, "Echoing without temperature, code: " + requestCode);
+        getFromServer(requestCode);
         storeData("packets_without_temp");
         messages.clear();
     }
 
     public void getPacketsWithDisabledRandomness() throws Exception
     {
+        LOGGER.log(Level.INFO, "Echoing with disabled randomness, code: " + requestCode);
         getFromServer("E0000");
         storeData("packets_without_random");
         messages.clear();
@@ -69,7 +73,6 @@ public class PacketService {
                 var receivedMessage = new String(rxbuffer, 0, responsePacket.getLength());
                 var duration = transmissionCompleted - transmissionStart;
                 messages.add(new String[] {receivedMessage, String.valueOf(duration)});
-                LOGGER.log(Level.INFO, "Received packet after " + String.format("%.2f", duration / 1000.0) + " second");
             } catch (Exception ex) {
                 LOGGER.log(Level.SEVERE ,ex.getMessage());
             }
@@ -93,7 +96,7 @@ public class PacketService {
         LOGGER.log(Level.INFO, "Writing packets with temperature to files.");
         var localFileWriter = new LocalCSVFileWriter();
         try {
-            localFileWriter.writeToFile("data/messages_with_temp_" + ECHO_REQUEST_CODE + "_", messages, new String[] {"Message", "Duration"});
+            localFileWriter.writeToFile("data/messages_with_temp_" + requestCode + "_", messages, new String[] {"Message", "Duration"});
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, ex.toString(), ex);
         }

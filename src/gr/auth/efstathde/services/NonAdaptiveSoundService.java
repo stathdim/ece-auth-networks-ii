@@ -1,12 +1,12 @@
 package gr.auth.efstathde.services;
 
+import gr.auth.efstathde.helpers.AudioFileWriter;
 import gr.auth.efstathde.helpers.LocalCSVFileWriter;
 import gr.auth.efstathde.helpers.SystemConfiguration;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -18,21 +18,28 @@ import java.util.logging.Logger;
 
 public class NonAdaptiveSoundService {
     private static final Logger LOGGER = Logger.getLogger(NonAdaptiveSoundService.class.getSimpleName());
-    private static final String CODE = "A9915";
-    private static List<String[]> signalFrequencies;
-    private static List<String[]> signalSubs;
+    private final String requestCode;
+    private final List<String[]> signalFrequencies;
+    private final List<String[]> signalSubs;
 
     public NonAdaptiveSoundService() {
         signalFrequencies = new ArrayList<>();
         signalSubs = new ArrayList<>();
+        requestCode = SystemConfiguration.getAudioCode();
     }
 
     public void getSignals() throws IOException, LineUnavailableException {
-        getSignal(CODE + "F");
-        getSignal(CODE + "T");
+        var songRequestCode = requestCode + "F";
+        var signalRequestCode = requestCode + "T";
+
+        LOGGER.log(Level.INFO, "Getting song from NonAdaptive service with request Code " + songRequestCode);
+        getSignal(songRequestCode, "nonadaptive_song");
+
+        LOGGER.log(Level.INFO, "Getting signal from NonAdaptive service with request Code " + signalRequestCode);
+        getSignal(signalRequestCode, "nonadaptive_signal");
     }
 
-    private void getSignal(String requestCode) throws IOException, LineUnavailableException {
+    private void getSignal(String requestCode, String filename) throws IOException, LineUnavailableException {
         var ipAddress = SystemConfiguration.getServerIp();
         var serverPort = SystemConfiguration.getServerPort();
         var clientPort = SystemConfiguration.getClientPort();
@@ -75,22 +82,16 @@ public class NonAdaptiveSoundService {
             }
         }
         storeData(requestCode);
-        playSoundClip(packetCount, freqs);
+        storeSoundClip(freqs, requestCode, filename);
 
         resSocket.close();
         reqSocket.close();
     }
 
-    private void playSoundClip(int packetCount, byte[] freqs) throws LineUnavailableException {
-        AudioFormat FAudio = new AudioFormat(8000, 8, 1, true, false);
-        SourceDataLine dl = AudioSystem.getSourceDataLine(FAudio);
-        System.out.println("Playing sound");
-        dl.open(FAudio, 32000);
-        dl.start();
-        dl.write(freqs, 0, 256 * packetCount);
-        dl.stop();
-        dl.close();
+    private static void storeSoundClip(byte[] freqs, String requestCode, String filename) throws IOException {
+        AudioFileWriter.storeSoundClip(freqs, requestCode, filename);
     }
+
     private void storeData(String requestCode) {
         LOGGER.log(Level.INFO, "Writing packets to files.");
         var localFileWriter = new LocalCSVFileWriter();
