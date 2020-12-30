@@ -12,8 +12,8 @@ import java.time.format.DateTimeFormatter;
 
 public class AudioFileWriter {
 
-    public static void storeSoundClip(byte[] freqs, String requestCode, String filename) throws IOException {
-        AudioFormat FAudio = new AudioFormat(8000, 16, 1, true, false);
+    public static void storeSoundClip(byte[] freqs, String requestCode, String filename, int quantBits) throws IOException {
+        AudioFormat FAudio = new AudioFormat(8000, quantBits, 1, true, false);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd HH_mm_ss");
 
         File file = new File("data/" + filename + "_" + requestCode + "_" + formatter.format(LocalDateTime.now()) + ".wav");

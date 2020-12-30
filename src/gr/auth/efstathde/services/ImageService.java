@@ -26,8 +26,8 @@ public class ImageService {
     }
 
     public void getImage() throws Exception {
-        getImageFromServer(requestCode + "PTZ");
-        writeToFile(requestCode + "PTZ");
+//        getImageFromServer(requestCode + "PTZ");
+//        writeToFile(requestCode + "PTZ");
         getImageFromServer(requestCode + "FIX");
         writeToFile(requestCode + "FIX");
     }

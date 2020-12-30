@@ -19,8 +19,8 @@ import java.util.logging.Logger;
 public class NonAdaptiveSoundService {
     private static final Logger LOGGER = Logger.getLogger(NonAdaptiveSoundService.class.getSimpleName());
     private final String requestCode;
-    private final List<String[]> signalFrequencies;
-    private final List<String[]> signalSubs;
+    private List<String[]> signalFrequencies;
+    private List<String[]> signalSubs;
 
     public NonAdaptiveSoundService() {
         signalFrequencies = new ArrayList<>();
@@ -35,6 +35,8 @@ public class NonAdaptiveSoundService {
         LOGGER.log(Level.INFO, "Getting song from NonAdaptive service with request Code " + songRequestCode);
         getSignal(songRequestCode, "nonadaptive_song");
 
+        signalSubs = new ArrayList<>();
+        signalFrequencies = new ArrayList<>();
         LOGGER.log(Level.INFO, "Getting signal from NonAdaptive service with request Code " + signalRequestCode);
         getSignal(signalRequestCode, "nonadaptive_signal");
     }
@@ -81,15 +83,26 @@ public class NonAdaptiveSoundService {
                 LOGGER.log(Level.SEVERE, ex.toString(), ex);
             }
         }
-        storeData(requestCode);
-        storeSoundClip(freqs, requestCode, filename);
-
         resSocket.close();
         reqSocket.close();
+
+        storeData(requestCode);
+        storeSoundClip(freqs, requestCode, filename);
+        playAudio(packetCount, freqs);
+    }
+
+    private void playAudio(int packetCount, byte[] freqs) throws LineUnavailableException {
+        AudioFormat FAudio = new AudioFormat(8000, 8, 1, true, false);
+        SourceDataLine dl = AudioSystem.getSourceDataLine(FAudio);
+        dl.open(FAudio, 32000);
+        dl.start();
+        dl.write(freqs, 0, 256 * packetCount);
+        dl.stop();
+        dl.close();
     }
 
     private static void storeSoundClip(byte[] freqs, String requestCode, String filename) throws IOException {
-        AudioFileWriter.storeSoundClip(freqs, requestCode, filename);
+        AudioFileWriter.storeSoundClip(freqs, requestCode, filename, 8);
     }
 
     private void storeData(String requestCode) {

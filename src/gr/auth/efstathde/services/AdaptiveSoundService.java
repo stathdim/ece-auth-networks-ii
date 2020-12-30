@@ -4,6 +4,7 @@ import gr.auth.efstathde.helpers.AudioFileWriter;
 import gr.auth.efstathde.helpers.LocalCSVFileWriter;
 import gr.auth.efstathde.helpers.SystemConfiguration;
 
+import javax.sound.sampled.*;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -32,7 +33,7 @@ public class AdaptiveSoundService {
         requestCode = SystemConfiguration.getAudioCode() + "AQF";
     }
 
-    public void getSoundFile() throws IOException {
+    public void getSoundFile() throws IOException, LineUnavailableException {
         LOGGER.log(Level.INFO, "Getting song from Adaptive Sound service with request Code " + requestCode);
 
         int packetCount = 997;
@@ -95,10 +96,21 @@ public class AdaptiveSoundService {
 
         storeData();
         storeSoundClip(freqs, requestCode);
+        playAudio(packetCount, freqs);
     }
 
     private static void storeSoundClip(byte[] freqs, String requestCode) throws IOException {
-        AudioFileWriter.storeSoundClip(freqs, requestCode, "adaptive_song");
+        AudioFileWriter.storeSoundClip(freqs, requestCode, "adaptive_song", 16);
+    }
+
+    private void playAudio(int packetCount, byte[] freqs) throws LineUnavailableException {
+        AudioFormat FAudio = new AudioFormat(8000, 16, 1, true, false);
+        SourceDataLine dl = AudioSystem.getSourceDataLine(FAudio);
+        dl.open(FAudio, 32000);
+        dl.start();
+        dl.write(freqs, 0, 256 * 2 * packetCount);
+        dl.stop();
+        dl.close();
     }
 
     private int handleSignalBeta(byte[] rxbuffer, byte[] betta, byte sign, int i) {

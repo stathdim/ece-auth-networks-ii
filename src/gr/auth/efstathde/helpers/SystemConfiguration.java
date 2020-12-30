@@ -2,13 +2,13 @@ package gr.auth.efstathde.helpers;
 
 public class SystemConfiguration {
     private static final String SERVER_IP = "155.207.18.208";
-    private static final int SERVER_PORT = 38011;
-    private static final int CLIENT_PORT = 48011;
-    private static final String PACKET_CODE = "E9167";
-    private static final String IMAGE_CODE = "M3284";
-    private static final String AUDIO_CODE = "A5086";
-    private static final String COPTER_CODE = "Q5105";
-    private static final String DIAGNOSTICS_CODE = "V8853";
+    private static final int SERVER_PORT = 38024;
+    private static final int CLIENT_PORT = 48024;
+    private static final String PACKET_CODE = "E7094";
+    private static final String IMAGE_CODE = "M8604";
+    private static final String AUDIO_CODE = "A1197";
+    private static final String COPTER_CODE = "Q2437";
+    private static final String DIAGNOSTICS_CODE = "V4241";
 
     public static String getServerIp() {
         return SERVER_IP;
