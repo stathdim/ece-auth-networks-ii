@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 public class IthakiCopterService {
     private static final Logger LOGGER = Logger.getLogger(IthakiCopterService.class.getSimpleName());
-    private static final String COPTER_CODE = "Q0596";
+    private static final String COPTER_CODE = "Q0335";
     private static final int COPTER_PORT = 38048;
     private final List<String> receivedMessages;
 
@@ -25,7 +25,7 @@ public class IthakiCopterService {
 
     public void communicateWithCopter() throws IOException
     {
-        communicate(150, 150, 150, "data/CopterTelemetry_0"+ COPTER_CODE + ".csv");
+        communicate(180, 160, 140, "data/CopterTelemetry_0"+ COPTER_CODE + ".csv");
         communicate(240, 170, 170,"data/CopterTelemetry_1"+ COPTER_CODE + ".csv");
     }
 

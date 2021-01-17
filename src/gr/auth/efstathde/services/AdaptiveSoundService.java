@@ -3,16 +3,17 @@ package gr.auth.efstathde.services;
 import gr.auth.efstathde.helpers.LocalCSVFileWriter;
 import gr.auth.efstathde.helpers.SystemConfiguration;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
 
 public class AdaptiveSoundService {
     private static final Logger LOGGER = Logger.getLogger(AdaptiveSoundService.class.getSimpleName());
-    private static final String CODE = "A9915AQF";
+    private static final String CODE = "A4686AQF";
     private static List<String[]> signalSubs;
     private static List<String[]> signalSamples;
     private static List<String[]> signalMeans;
@@ -93,7 +94,20 @@ public class AdaptiveSoundService {
         reqSocket.close();
 
         storeData();
+        storeSoundClip(freqs, CODE, "adaptive_song", 16);
         playAudio(packetCount, freqs);
+    }
+
+    public static void storeSoundClip(byte[] freqs, String requestCode, String filename, int quantBits) throws IOException {
+        AudioFormat FAudio = new AudioFormat(8000, quantBits, 1, true, false);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd HH_mm_ss");
+
+        File file = new File("data/" + filename + "_" + requestCode + "_" + formatter.format(LocalDateTime.now()) + ".wav");
+
+        ByteArrayInputStream Audio_Data = new ByteArrayInputStream(freqs);
+        AudioInputStream Audio = new AudioInputStream(Audio_Data, FAudio, freqs.length);
+
+        AudioSystem.write(Audio, AudioFileFormat.Type.WAVE, file);
     }
 
     private void playAudio(int packetCount, byte[] freqs) throws LineUnavailableException {

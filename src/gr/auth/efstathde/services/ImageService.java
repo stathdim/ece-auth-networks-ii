@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 
 public class ImageService {
     private static final Logger LOGGER = Logger.getLogger(ImageService.class.getSimpleName());
-    private static String CODE = "M4603CAM=";
+    private static String CODE = "M3123CAM=";
     private final List<byte[]> receivedBytes;
 
     public ImageService() {
@@ -27,6 +27,7 @@ public class ImageService {
     public void getImage() throws Exception {
         getImageFromServer(CODE + "PTZ");
         writeToFile(CODE + "PTZ");
+        receivedBytes.clear();
         getImageFromServer(CODE + "FIX");
         writeToFile(CODE + "FIX");
     }
