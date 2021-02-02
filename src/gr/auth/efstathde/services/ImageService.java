@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 
 public class ImageService {
     private static final Logger LOGGER = Logger.getLogger(ImageService.class.getSimpleName());
-    private static String CODE = "M3123CAM=";
+    private static String CODE = "M0125CAM=";
     private final List<byte[]> receivedBytes;
 
     public ImageService() {

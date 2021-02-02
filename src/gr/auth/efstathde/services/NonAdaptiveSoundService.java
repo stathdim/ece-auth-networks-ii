@@ -19,9 +19,11 @@ import java.util.logging.Logger;
 
 public class NonAdaptiveSoundService {
     private static final Logger LOGGER = Logger.getLogger(NonAdaptiveSoundService.class.getSimpleName());
-    private static final String CODE = "A4686";
+    private static final String CODE = "A8236";
     private static List<String[]> signalFrequencies;
     private static List<String[]> signalSubs;
+    public static final int PACKET_COUNT = 997;
+    public static final int DIFFERENCE_MULTIPLIER = 2;
 
     public NonAdaptiveSoundService() {
         signalFrequencies = new ArrayList<>();
@@ -39,8 +41,7 @@ public class NonAdaptiveSoundService {
         var ipAddress = SystemConfiguration.getServerIp();
         var serverPort = SystemConfiguration.getServerPort();
         var clientPort = SystemConfiguration.getClientPort();
-        int packetCount = 997, b = 2;
-        String packetInfo = requestCode + packetCount;
+        String packetInfo = requestCode + PACKET_COUNT;
 
         byte[] txbuffer = packetInfo.getBytes();
         DatagramPacket reqPacket =
@@ -51,38 +52,57 @@ public class NonAdaptiveSoundService {
         DatagramSocket resSocket = new DatagramSocket(clientPort);
         DatagramSocket reqSocket = new DatagramSocket();
 
-        byte[] freqs = new byte[128 * 2 * packetCount];
+        byte[] freqs = new byte[128 * 2 * PACKET_COUNT];
 
         reqSocket.send(reqPacket);
         resSocket.setSoTimeout(1000);
 
-        for(int i = 0; i < packetCount; i++){
+        for(int i = 0; i < PACKET_COUNT; i++){
             try {
-                int sub1, sub2;
                 resSocket.receive(resPacket);
-                for (int j = 0; j < 128; j++){
-                    int a = rxbuffer[j];
-                    int index = i*256 + 2*j;
-                    sub1 = ((a >> 0x4) & 0xF) - 0x8;
-                    sub2 = (a & 0xF) - 0x8;
-                    freqs[index] = (index == 0) ? (byte) 0 : (byte) (b * sub1 + freqs[index + 1]);
-                    freqs[index + 1] = (byte) (b * (sub2) + freqs[index]);
-
-                    signalSubs.add(new String[] {String.valueOf(index), String.valueOf(sub1)});
-                    signalSubs.add(new String[] {String.valueOf(index + 1), String.valueOf(sub2)});
-                    signalFrequencies.add(new String[] {String.valueOf(index), String.valueOf(freqs[index])});
-                    signalFrequencies.add(new String[] {String.valueOf(index + 1), String.valueOf(freqs[index + 1])});
-                }
+                processResponse(rxbuffer, freqs, i);
             } catch (Exception ex){
                 LOGGER.log(Level.SEVERE, ex.toString(), ex);
             }
         }
         storeData(requestCode);
         storeSoundClip(freqs, CODE, "non_adaptive", 8);
-        playSoundClip(packetCount, freqs);
+        playSoundClip(PACKET_COUNT, freqs);
 
         resSocket.close();
         reqSocket.close();
+    }
+
+    private void processResponse(byte[] rxbuffer, byte[] freqs, int packetCount) {
+        for (int i = 0; i < 128; i++){
+            int a = rxbuffer[i];
+            int index = packetCount *256 + 2*i;
+            int sub1 = maskFirstDifference(a);
+            int sub2 = maskSecondDifference(a);
+            addToFrequencies(freqs, sub1, sub2, index);
+            addValuesToCollector(freqs, new String[]{String.valueOf(index), String.valueOf(sub1)},
+                    new String[]{String.valueOf(index + 1), String.valueOf(sub2)}, index);
+        }
+    }
+
+    private void addValuesToCollector(byte[] freqs, String[] e, String[] e1, int index) {
+        signalSubs.add(e);
+        signalSubs.add(e1);
+        signalFrequencies.add(new String[] {String.valueOf(index), String.valueOf(freqs[index])});
+        signalFrequencies.add(new String[] {String.valueOf(index + 1), String.valueOf(freqs[index + 1])});
+    }
+
+    private void addToFrequencies(byte[] freqs, int sub1, int sub2, int index) {
+        freqs[index] = (index == 0) ? (byte) 0 : (byte) (DIFFERENCE_MULTIPLIER * sub1 + freqs[index + 1]);
+        freqs[index + 1] = (byte) (DIFFERENCE_MULTIPLIER * sub2 + freqs[index]);
+    }
+
+    private int maskSecondDifference(int a) {
+        return (a & 0xF) - 0x8;
+    }
+
+    private int maskFirstDifference(int a) {
+        return ((a >> 0x4) & 0xF) - 0x8;
     }
 
     public static void storeSoundClip(byte[] freqs, String requestCode, String filename, int quantBits) throws IOException {

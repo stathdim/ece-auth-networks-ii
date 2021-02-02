@@ -12,12 +12,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/***
- * Connects to the Vehicle Diagnostics Service using the UDP protocol
- */
 public class DiagnosticsService {
     private static final Logger LOGGER = Logger.getLogger(DiagnosticsService.class.getSimpleName());
-    private static final String CODE = "V9749";
+    private static final String CODE = "V2041";
     private static final int DURATION_MS = 240000; // 4 min in milliseconds
     private static final String[] typesOfMeasurements = new String[]{
             "Run Time",
@@ -80,6 +77,7 @@ public class DiagnosticsService {
             case 4:
                 return XX;
         }
+
         return 1;
     }
 
@@ -100,12 +98,7 @@ public class DiagnosticsService {
         while (dt < DURATION_MS) {
             var diagnostics = new String[typesOfMeasurements.length];
             for (int i = 0; i < PID_CODES.values().length; i++) {
-                byte[] txBuffer = requestData[i].getBytes();
-                DatagramPacket reqPacket =
-                        new DatagramPacket(txBuffer, txBuffer.length, InetAddress.getByName(ipAddress), serverPort);
-                reqSocket.send(reqPacket);
-                resSocket.setSoTimeout(3200);
-                resSocket.receive(resPacket);
+                CommunicateWithIthaki(ipAddress, serverPort, requestData[i], resPacket, resSocket, reqSocket);
                 double result = diagnosticsResponseFormula(new String(rxbuffer), i);
                 diagnostics[i] = String.valueOf(result);
             }
@@ -118,6 +111,15 @@ public class DiagnosticsService {
         reqSocket.close();
 
         storeData();
+    }
+
+    private void CommunicateWithIthaki(String ipAddress, int serverPort, String requestDatum, DatagramPacket resPacket, DatagramSocket resSocket, DatagramSocket reqSocket) throws IOException {
+        byte[] txBuffer = requestDatum.getBytes();
+        DatagramPacket reqPacket =
+                new DatagramPacket(txBuffer, txBuffer.length, InetAddress.getByName(ipAddress), serverPort);
+        reqSocket.send(reqPacket);
+        resSocket.setSoTimeout(3200);
+        resSocket.receive(resPacket);
     }
 
     private String[] getRequestData() {

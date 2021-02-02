@@ -21,7 +21,11 @@ import java.util.logging.Logger;
 
 public class AdaptiveSoundService {
     private static final Logger LOGGER = Logger.getLogger(AdaptiveSoundService.class.getSimpleName());
-    private static final String CODE = "A4686AQF";
+    private static final String CODE = "A8236AQF";
+    private static final int FIRST_MASK = 0x0000000F;
+    private static final int SECOND_MASK = 0x000000F0;
+    private static final int THIRD_MAASK = 0x000000FF;
+    private static final int FOURTH_MASK = 0x0000FF00;
     private static List<String[]> signalSubs;
     private static List<String[]> signalSamples;
     private static List<String[]> signalMeans;
@@ -55,40 +59,12 @@ public class AdaptiveSoundService {
         byte[] betta = new byte[4];
         byte sign;
         byte[] freqs = new byte[256 * 2 * packetCount];
-        int rx, sub1, sub2, sample1 = 0, sample2 = 0, counter = 4, mean, beta, hint = 0, sumplCount = 0;
 
         reqSocket.send(reqPacket);
         resSocket.setSoTimeout(1000);
 
         for (int i = 1; i < packetCount; i++) {
-            resSocket.receive(resPacket);
-            sign = (byte) ((rxbuffer[1] & 0x80) != 0 ? 0xff : 0x00); //converting byte[2] to integer
-            mean = handleSignalMean(rxbuffer, meanB, sign, i);
-
-            sign = (byte) ((rxbuffer[3] & 0x80) != 0 ? 0xff : 0x00);
-            beta = handleSignalBeta(rxbuffer, betta, sign, i);
-
-            for (int j = 4; j <= 131; j++) {
-                rx = rxbuffer[j];
-                sub1 = (rx & 0x0000000F) - 8;
-                sub2 = ((rxbuffer[j] & 0x000000F0) >> 4) - 8;
-                signalSubs.add(new String[]{String.valueOf(++sumplCount), String.valueOf(sub1)});
-                signalSubs.add(new String[]{String.valueOf(++sumplCount), String.valueOf(sub2)});
-                sub1 = sub1 * beta;
-                sub2 = sub2 * beta;
-                sample1 = hint + sub1 + mean;
-                sample2 = sub1 + sub2 + mean;
-                hint = sub2;
-                counter += 4;
-                freqs[counter] = (byte) (sample1 & 0x000000FF);
-                freqs[counter + 1] = (byte) ((sample1 & 0x0000FF00) >> 8);
-                freqs[counter + 2] = (byte) (sample2 & 0x000000FF);
-                freqs[counter + 3] = (byte) ((sample2 & 0x0000FF00) >> 8);
-                signalSamples.add(new String[]{String.valueOf(counter), String.valueOf(freqs[counter])});
-                signalSamples.add(new String[]{String.valueOf(counter + 1), String.valueOf(freqs[counter + 1])});
-                signalSamples.add(new String[]{String.valueOf(counter + 2), String.valueOf(freqs[counter + 2])});
-                signalSamples.add(new String[]{String.valueOf(counter + 3), String.valueOf(freqs[counter + 3])});
-            }
+            getSoundPacket(rxbuffer, resPacket, resSocket, meanB, betta, freqs, i);
         }
         resSocket.close();
         reqSocket.close();
@@ -96,6 +72,52 @@ public class AdaptiveSoundService {
         storeData();
         storeSoundClip(freqs, CODE, "adaptive_song", 16);
         playAudio(packetCount, freqs);
+    }
+
+    private void getSoundPacket(byte[] rxbuffer, DatagramPacket resPacket, DatagramSocket resSocket, byte[] meanB, byte[] betta, byte[] freqs, int i) throws IOException {
+        int counter = 4, hint = 0, sampleCount = 0;
+        resSocket.receive(resPacket);
+
+        byte sign = getSignFromBuffer(rxbuffer, 1);
+        int mean = handleSignalMean(rxbuffer, meanB, sign, i);
+
+        sign = getSignFromBuffer(rxbuffer, 3);
+        int beta = handleSignalBeta(rxbuffer, betta, sign, i);
+
+        for (int j = 4; j <= 131; j++) {
+            int rx = rxbuffer[j];
+
+            int sub1 = (rx & FIRST_MASK) - 8;
+            int sub2 = ((rxbuffer[j] & SECOND_MASK) >> 4) - 8;
+            signalSubs.add(new String[]{String.valueOf(++sampleCount), String.valueOf(sub1)});
+            signalSubs.add(new String[]{String.valueOf(++sampleCount), String.valueOf(sub2)});
+            sub1 = sub1 * beta;
+            sub2 = sub2 * beta;
+            int sample1 = hint + sub1 + mean;
+            int sample2 = sub1 + sub2 + mean;
+            hint = sub2;
+            counter += 4;
+            maskFrequencies(freqs, sample1, sample2, counter);
+            addFrequenciesToSamples(freqs, counter);
+        }
+    }
+
+    private void addFrequenciesToSamples(byte[] freqs, int counter) {
+        signalSamples.add(new String[]{String.valueOf(counter), String.valueOf(freqs[counter])});
+        signalSamples.add(new String[]{String.valueOf(counter + 1), String.valueOf(freqs[counter + 1])});
+        signalSamples.add(new String[]{String.valueOf(counter + 2), String.valueOf(freqs[counter + 2])});
+        signalSamples.add(new String[]{String.valueOf(counter + 3), String.valueOf(freqs[counter + 3])});
+    }
+
+    private void maskFrequencies(byte[] freqs, int sample1, int sample2, int counter) {
+        freqs[counter] = (byte) (sample1 & THIRD_MAASK);
+        freqs[counter + 1] = (byte) ((sample1 & FOURTH_MASK) >> 8);
+        freqs[counter + 2] = (byte) (sample2 & THIRD_MAASK);
+        freqs[counter + 3] = (byte) ((sample2 & FOURTH_MASK) >> 8);
+    }
+
+    private byte getSignFromBuffer(byte[] buffer, int idx) {
+        return (byte) ((buffer[idx] & 0x80) != 0 ? 0xff : 0x00);
     }
 
     public static void storeSoundClip(byte[] freqs, String requestCode, String filename, int quantBits) throws IOException {
